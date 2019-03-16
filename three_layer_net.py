@@ -228,12 +228,13 @@ best_net = None # store the best model into this
 # write code to sweep through possible combinations of hyperparameters          #
 # automatically like we did on the previous exercises.                          #
 #################################################################################
-# Your code
+"""
+best_net = net
+"""
 #################################################################################
 #                               END OF YOUR CODE                                #
 #################################################################################
 """
-best_net = net
 
 # visualize the weights of the best network
 show_net_weights(best_net)
