@@ -176,19 +176,15 @@ print(X_train_feats.shape)
 
 from SDUCS2019.classifiers.neural_net import ThreeLayerNet
 input_dim = X_train_feats.shape[1]
-hidden_dim = 200
+hidden_dim = 512
 num_classes = 10
 
 net = ThreeLayerNet(input_dim, hidden_dim, num_classes)
 
-
-mean = np.mean(X_train_feats)
-std = np.std(X_train_feats)
-
-stats = net.train((X_train_feats-mean)/std, y_train, (X_val_feats-mean)/std, y_val,
-            num_iters=2000, batch_size=300,
-            learning_rate=1e-2, learning_rate_decay=0.99,
-            reg=1e-4, verbose=True)
+stats = net.train(X_train_feats, y_train, X_val_feats, y_val,
+            num_iters=300, batch_size=4000,
+            learning_rate=1.8, learning_rate_decay=0.98,
+            reg=1e-2, verbose=True)
 best_net = None
 
 ################################################################################
@@ -205,6 +201,6 @@ best_net = net
 
 # Run your best neural net classifier on the test set. 
 
-test_acc = (best_net.predict((X_test_feats-mean)/std) == y_test).mean()
+test_acc = (best_net.predict(X_test_feats) == y_test).mean()
 print(test_acc)
 
