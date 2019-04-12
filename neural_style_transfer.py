@@ -44,30 +44,15 @@ class VGGNet(nn.Module):
     def __init__(self):
         super(VGGNet, self).__init__()
         self.vgg = models.vgg19(pretrained=True).features
-        self.content_layers_default = ['conv_4']
-        self.style_layers_default = ['conv_1', 'conv_2', 'conv_3', 'conv_4', 'conv_5']
-        self.model = nn.Sequential()
+        self.select = ['0', '5', '10', '19', '28']
 
     def forward(self, img):
-        cnn = copy.deepcopy(self.vgg)
-        style_layers = self.style_layers_default
-
-        model = nn.Sequential()  # the new Sequential module network
         features = []
-        i = 1
-        for layer in list(cnn):
-            if(isinstance(layer, nn.Conv2d)):
-                name = "conv_" + str(i)
-                model.add_module(name, layer)
-                if name in style_layers:
-                    features.append(model(img).clone())
-            if(isinstance(layer, nn.ReLU)):
-                name = "relu_" + str(i)
-                model.add_module(name, layer)
-                i += 1
-            if isinstance(layer, nn.MaxPool2d):
-                name = "pool_" + str(i)
-                model.add_module(name, layer)
+
+        for name,layer in self.vgg._modules.items():
+            img = layer(img)
+            if name in self.select:
+                features.append(img)
 
         return features
 
@@ -102,17 +87,12 @@ def main(config):
         content_loss = 0.0
         style_loss = 0.0
 
-        time = 0
-        optimizer.zero_grad()
-
         for f1, f2, f3 in zip(target_features, content_features, style_features):
             pass
             #计算content_loss
             ######################################
             # write your code
-            time += 1
-            if time == 4:
-                content_loss += F.mse_loss(f1, f2)
+            content_loss += torch.mean((f1 - f2)**2)
             ######################################
 
             #将特征reshape成二维矩阵相乘，求gram矩阵
@@ -124,15 +104,20 @@ def main(config):
                 G = torch.mm(features, features.t())
                 return G.div(a * b * c * d)
 
-            gf1 = GM(f1)
-            gf3 = GM(f3)
+            _ , b, c, d = f1.size()
+            f1 = f1.view(b, c * d)
+            f3 = f3.view(b, c * d)
+            f1 = torch.mm(f1, f1.t())
+            f3 = torch.mm(f3, f3.t())
+            #gf1 = GM(f1)
+            #gf3 = GM(f3)
             ######################################
 
 
             #计算style_loss
             ######################################
             # write your code
-            style_loss += F.mse_loss(gf1, gf3)
+            style_loss += torch.mean((f1 - f3)**2) / (b * c * d)
             ######################################
 
 
@@ -149,6 +134,7 @@ def main(config):
         #反向求导与优化
         ######################################
         # write your code
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         ######################################
@@ -169,10 +155,10 @@ if __name__ == "__main__":
     parser.add_argument('--content', type=str, default='./content.jpg')
     parser.add_argument('--style', type=str, default='./style.jpg')
     parser.add_argument('--max_size', type=int, default=400)
-    parser.add_argument('--total_step', type=int, default=1000)
+    parser.add_argument('--total_step', type=int, default=500)
     parser.add_argument('--log_step', type=int, default=10)
     parser.add_argument('--sample_step', type=int, default=50)
-    parser.add_argument('--style_weight', type=float, default=1000)
+    parser.add_argument('--style_weight', type=float, default=100)
     parser.add_argument('--lr', type=float, default=0.003)
     config = parser.parse_args()
     print(config)
